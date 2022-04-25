@@ -4,7 +4,15 @@ from itertools import permutations, chain, combinations
 from math import ceil
 from station import Station
 from city import City
+import matplotlib.pyplot as plt
 
+SMALL, MED, LARGE, LW = 18, 24, 30, 3
+plt.rc('axes', titlesize=MED)    # fontsize of the axes title
+plt.rc('axes', labelsize=MED)    # fontsize of the x and y labels
+plt.rc('xtick', labelsize=SMALL) # fontsize of the tick labels
+plt.rc('ytick', labelsize=SMALL) # fontsize of the tick labels
+plt.rc('legend', fontsize=MED)   # legend fontsize
+plt.rc('font', size=LARGE)       # controls default text sizes
 HORIZONTAL, VERTICAL = 0, 1
     
 def midpoint(s1: Station, s2: Station) -> tuple[float, float]:
@@ -23,6 +31,16 @@ def midpoint(s1: Station, s2: Station) -> tuple[float, float]:
     midy = s1.y - diry * (alignment == VERTICAL  ) * straight_len
 
     return midx, midy
+
+def gen_distance_matrix(city: City) -> np.ndarray:
+    ''' Creates nxn array of distances between stations '''
+    dist_matrix = np.zeros((city.n_stations, city.n_stations))
+    
+    for s1 in city.stations:
+        for s2 in city.stations:
+            dist_matrix[s1.id, s2.id] = distance(s1, s2)
+            
+    return dist_matrix
 
 def distance(s1: Station, s2: Station) -> float:
     ''' Returns distance of rail between two adjacent stations '''

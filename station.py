@@ -7,29 +7,29 @@ KINDS = {'square': ['s', 500], 'circle': ['o', 500], 'triangle': ['^', 500],
          'star': ['*', 700], 'plus': ['P', 500], 'pentagon': ['p', 500], 'diamond': ['D', 400]}
 
 class Station:
-    __id_iter = count()
+    _id_iter = count()
 
     def __init__(self, x: float=np.random.uniform(), y: float=np.random.uniform(), kind=None) -> None:
         self.x = x
         self.y = y
         # If kind not specified, pick randomly from options
-        self.kind = self.__gen_kind() if kind is None else kind
+        self.kind = self._gen_kind() if kind is None else kind
         
         assert(self.kind in KINDS)
         
         self.shape = KINDS[self.kind][SHAPE]
         self.size  = KINDS[self.kind][SIZE]
         
-        self.__set_id()
+        self._set_id()
         
-    def __gen_kind(self) -> str:
+    def _gen_kind(self) -> str:
         return np.random.choice(list(KINDS.keys()))
         
-    def __set_id(self) -> None:
-        self.id = next(Station.__id_iter)
+    def _set_id(self) -> None:
+        self.id = next(Station._id_iter)
     
     def reset() -> None:
-        Station.__id_iter = count()
+        Station._id_iter = count()
         
     def __eq__(self, other):
         return self.id == other.id
