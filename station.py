@@ -35,7 +35,7 @@ class Station:
         return self.id == other.id
         
     def __repr__(self):
-        return str(self.id)
+        return f"<{str(self.id)}>"
     
     def __hash__(self):
         return hash(self.id)
