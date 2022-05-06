@@ -146,7 +146,7 @@ def draw(s1: Station, s2: Station, ax, c: str) -> None:
     # Bend
     ax.plot([midx, s2.x], [midy, s2.y], lw=4, zorder=-1, c=c)
 
-def graph(stations, rails, equal_aspect=False):
+def graph(stations, rails, equal_aspect=False, show_station_ids=True):
     # Check if only one rail
     if isinstance(rails[0], Station):
         rails = [rails]
@@ -161,14 +161,15 @@ def graph(stations, rails, equal_aspect=False):
     
     for i, s in enumerate(stations):
         ax.scatter(s.x, s.y, marker=s.shape, s=s.size, c='white', edgecolor='#382c27', linewidth=4)
-        ax.text(s.x + 0.03, s.y + 0.03 , i, fontsize=12, color="red")
+        if show_station_ids:
+            ax.text(s.x, s.y , i, fontsize=12, color="red", ha='center', va='center')
 
     fig.set_facecolor('#f7f7f5')
     ax.axis('off')
     
     if equal_aspect:
         fig.gca().set_aspect('equal')
-    ax.set_xlim(min(s.x for s in stations)-0.05, max(s.x for s in stations) + 0.05)
-    ax.set_ylim(min(s.y for s in stations)-0.05, max(s.y for s in stations) + 0.05)
+    ax.set_xlim(min(s.x for s in stations)-0.1, max(s.x for s in stations) + 0.1)
+    ax.set_ylim(min(s.y for s in stations)-0.1, max(s.y for s in stations) + 0.1)
 
     plt.show()

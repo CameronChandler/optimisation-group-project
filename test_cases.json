@@ -1,14 +1,12 @@
 {
     "cross": {
         "description": "For 2 train. Use to test if TSP is happily violated in favour of two 'cross' tracks",
-        "n_stations": 9,
          "locations": [[-1.0, -1.0], [-0.4, -0.45], [0.0, 0.0], [0.6, 0.6], [1.0, 1.0], 
                        [-1.0, 1.0], [-0.51, 0.5], [0.5, -0.5],   [1.0, -1.0]],
          "kinds": ["star", "circle", "square", "triangle", "square", "circle", "square", "triangle", "star"]
     },
     "dispersed": {
         "description": "Just a random generation that I'm not sure what optimal would be.",
-        "n_stations": 10,
         "locations": [[-0.88, -0.33], [0.38, 0.41], [0.58, 0.85],
                       [-0.69, -0.51], [-0.07, -0.31], [0.5, -0.35],
                       [-0.16, -0.79], [-0.54, -0.29], [-0.02, -0.7], [-0.72, 0.31]],
@@ -16,26 +14,22 @@
     },
     "hook": {
         "description": "Tests whether you'd 'follow the hook' for a more shape-diverse line, even if suboptimal",
-        "n_stations": 6,
         "locations": [[-0.72, 0.6], [0, 0.75], [-0.25, 0.25],
                      [-0.3, -0.1], [-0.3, -0.9], [0.69, -0.7]],
         "kinds": ["triangle", "circle", "square", "triangle", "star", "triangle"]
     },
     "hexagon": {
         "description": "One square centrally located. One train should suffice if it follows a 'sector earch pattern' E.g. https://www.helisimmer.com/media/11659/search-sector-pattern.png?width=750&mode=min",
-        "n_stations": 7,
         "locations": [[0,0], [1,0],[0.5, 0.8666], [-0.5, 0.8666], [-1,0], [-0.5,-0.8666], [0.5, -0.8666]],
         "kinds": ["square", "triangle", "circle", "triangle", "circle", "triangle", "circle"]
     },
     "donut": {
         "description": "4 nodes spread out evenly. Optimal solution should be the convex hull, and a loop if playing MM.",
-        "n_stations": 4,
         "locations": [[0,1],[1,0],[-1,0],[0,-1]],
         "kinds": ["square", "triangle", "circle", "triangle"]
     },
     "centralised": {
         "description": "one obvious square centrally located, encourages 3+ train tracks that converge on square. Copied from a youtube video",
-        "n_stations": 11,
         "locations": [[-0.976, 0.599], [-0.604, 0.02], [-0.598, 0.601],
                       [-0.427, 0.893], [-0.268, 0.233], [0.066, 0.902],
                       [0.31, 0.608], [0.494, 0.243], [0.533, 1.039],
@@ -45,14 +39,12 @@
     },
     "2_cluster": {
         "description": "2 well-separated clusters, each containing the full set of shapes available",
-        "n_stations": 9,
         "locations": [[0.668, -0.169], [0.846, -0.323], [0.577, -0.52], [0.779, -0.517], [0.496, -0.323],
                       [-0.609, 0.811], [-0.862, 0.822], [-0.609, 0.601], [-0.851, 0.607]],
         "kinds": ["circle", "triangle", "square", "circle", "star",
                   "circle", "triangle", "square", "star"]
     },
     "3_cluster": {
-        "n_stations": 12,
         "locations": [[0.668, -0.169], [0.846, -0.323], [0.577, -0.52], [0.779, -0.517], [0.496, -0.323],
                       [-0.609, 0.811], [-0.862, 0.822], [-0.609, 0.601], [-0.851, 0.607],
                       [-0.431, -0.404], [-0.619, -0.525], [-0.65, -0.306]],
@@ -61,7 +53,6 @@
                   "circle", "triangle", "square"]
     },
     "4_cluster": {
-        "n_stations": 18,
         "locations": [[0.366, 0.564], [0.776, 0.563], [0.663, 0.402], [0.663, 0.725], [0.491, 0.402], [0.466, 0.733], 
                       [0.668, -0.169], [0.846, -0.323], [0.577, -0.52], [0.779, -0.517], [0.496, -0.323],
                       [-0.609, 0.811], [-0.862, 0.822], [-0.609, 0.601], [-0.851, 0.607],
@@ -73,8 +64,12 @@
     },
     "loop_feasibility": {
         "description": "Used for testing whether loops are permissible & in the optimal solution",
-        "n_stations": 3,
         "locations": [[1,1], [1,-1], [-1,-1]],
         "kinds": ["circle", "triangle", "square"]
+    },
+    "force_rail_overlap": {
+        "description": "A test case where optimal solution should have rail overlap",
+        "locations": [[0,0], [4,0], [0,5], [4, 5], [2, 2], [2, 3]],
+        "kinds": ["circle", "circle", "circle", "circle", "triangle", "square"]
     }
 }

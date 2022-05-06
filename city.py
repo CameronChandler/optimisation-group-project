@@ -4,9 +4,12 @@ from station import Station, KINDS
 
 class City:
     
-    def __init__(self, n_stations: int, locations=None, kinds=None):
+    def __init__(self, n_stations=None, locations=None, kinds=None):
         Station.reset()
-        self.n_stations = n_stations        
+        if n_stations is None and locations is None:
+            raise ValueError("Can't have both n_stations and locations as `None`")
+            
+        self.n_stations = len(locations) if n_stations is None else n_stations     
         self._locations = self._gen_locations() if locations is None else locations
         self._kinds     = self._gen_kinds()     if kinds     is None else kinds
         self.stations = self.gen_stations()
