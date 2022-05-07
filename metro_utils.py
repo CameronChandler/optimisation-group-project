@@ -131,22 +131,21 @@ def pairs2rails(pairs):
     return rails
     
 #### PLOTTING ####
-
-import matplotlib.pyplot as plt
-import numpy as np
-
 def draw(s1: Station, s2: Station, ax, c: str, disp=0) -> None:
     """Draws the (s1,s2)-rail connection, with `disp` offset for overlapping rails"""
     midx, midy = midpoint(s1, s2)
     
     # Straight
-    ax.plot([s1.x+disp, midx+disp], 
-            [s1.y+disp, midy+disp], lw=4, zorder=-1, c=c)
+    jitter = np.random.uniform(-0.005, 0.005, 4)
+    ax.plot([s1.x+jitter[0], midx], 
+            [s1.y+jitter[1], midy], lw=4, zorder=-1, c=c)
     
     # Bend
-    ax.plot([midx+disp, s2.x+disp], [midy+disp, s2.y+disp], lw=4, zorder=-1, c=c)
+    ax.plot([midx, s2.x+jitter[2]], 
+            [midy, s2.y+jitter[3]], lw=4, zorder=-1, c=c)
 
-def graph(stations, rails, equal_aspect=False, show_station_ids=True):
+
+def graph(stations, rails, equal_aspect=False, show_station_ids=True, jitter=True):
     # Check if only one rail
     if isinstance(rails[0], Station):
         rails = [rails]
@@ -158,12 +157,39 @@ def graph(stations, rails, equal_aspect=False, show_station_ids=True):
     for i, rail in enumerate(rails):
         start = rail[0]
         for end in rail[1:]:
-            if (start,end) in edges or (end,start) in edges:
-                draw(start, end, ax, f'C{i}', disp=0.01)
-            else:
-                draw(start, end, ax, f'C{i}')
-            edges[(start,end)] = i
+            draw(start, end, ax, f'C{i}', jitter)
+            edges[(start, end)] = i
             start = end
+    
+    for i, s in enumerate(stations):
+        ax.scatter(s.x, s.y, marker=s.shape, s=s.size, c='white', edgecolor='#382c27', linewidth=4)
+        if show_station_ids:
+            ax.text(s.x, s.y , i, fontsize=12, color="red", ha='center', va='center')
+
+    fig.set_facecolor('#f7f7f5')
+    ax.axis('off')
+    
+    if equal_aspect:
+        fig.gca().set_aspect('equal')
+    ax.set_xlim(min(s.x for s in stations)-0.1, max(s.x for s in stations) + 0.1)
+    ax.set_ylim(min(s.y for s in stations)-0.1, max(s.y for s in stations) + 0.1)
+
+    plt.show()
+
+# Sorry Callum!
+def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True):    
+    fig, ax = plt.subplots(figsize=(12, 12))
+    
+    edges = dict()
+
+    for k in range(x.shape[2]):
+        for i in range(x.shape[0]):
+            for j in range(i+1, x.shape[0]):
+                if x[i, j, k]:
+                    start, end = stations[i], stations[j]
+                    draw(start, end, ax, f'C{k}', jitter)
+                    edges[(start, end)] = i
+                    start = end
     
     for i, s in enumerate(stations):
         ax.scatter(s.x, s.y, marker=s.shape, s=s.size, c='white', edgecolor='#382c27', linewidth=4)
