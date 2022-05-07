@@ -135,16 +135,16 @@ def pairs2rails(pairs):
 import matplotlib.pyplot as plt
 import numpy as np
 
-def draw(s1: Station, s2: Station, ax, c: str) -> None:
-    
+def draw(s1: Station, s2: Station, ax, c: str, disp=0) -> None:
+    """Draws the (s1,s2)-rail connection, with `disp` offset for overlapping rails"""
     midx, midy = midpoint(s1, s2)
     
     # Straight
-    ax.plot([s1.x, midx], 
-            [s1.y, midy], lw=4, zorder=-1, c=c)
+    ax.plot([s1.x+disp, midx+disp], 
+            [s1.y+disp, midy+disp], lw=4, zorder=-1, c=c)
     
     # Bend
-    ax.plot([midx, s2.x], [midy, s2.y], lw=4, zorder=-1, c=c)
+    ax.plot([midx+disp, s2.x+disp], [midy+disp, s2.y+disp], lw=4, zorder=-1, c=c)
 
 def graph(stations, rails, equal_aspect=False, show_station_ids=True):
     # Check if only one rail
@@ -152,11 +152,17 @@ def graph(stations, rails, equal_aspect=False, show_station_ids=True):
         rails = [rails]
     
     fig, ax = plt.subplots(figsize=(12, 12))
+    
+    edges = dict()
 
     for i, rail in enumerate(rails):
         start = rail[0]
         for end in rail[1:]:
-            draw(start, end, ax, f'C{i}')
+            if (start,end) in edges or (end,start) in edges:
+                draw(start, end, ax, f'C{i}', disp=0.01)
+            else:
+                draw(start, end, ax, f'C{i}')
+            edges[(start,end)] = i
             start = end
     
     for i, s in enumerate(stations):
