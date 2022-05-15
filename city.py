@@ -57,6 +57,7 @@ class City:
             remaining_kinds = [e[0] for e in options]
             probs = np.array([e[1] for e in options])
             kind = np.random.choice(remaining_kinds, p=probs / probs.sum())
+            kinds.append(kind)
             if kind in ['star', 'plus', 'pentagon', 'diamond']:
                 taken_special.append(kind)
         
