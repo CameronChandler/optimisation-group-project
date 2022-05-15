@@ -5,6 +5,9 @@ from math import ceil
 from station import Station
 from city import City
 import matplotlib.pyplot as plt
+from numpy.random import shuffle, randint, choice
+from copy import deepcopy
+from time import time
 
 SMALL, MED, LARGE, LW = 18, 24, 30, 3
 plt.rc('axes', titlesize=MED)    # fontsize of the axes title
@@ -129,14 +132,175 @@ def pairs2rails(pairs):
         rails.append(station)
         
     return rails
+
+#### SIMULATED ANNEALING #### 
+def initialise(N, K):
+    ''' Initialises N x N x K matrix `x` that creates a path between all stations '''
+    x = np.zeros((N, N, K))
+    
+    order = list(range(N))
+    
+    for k in range(K):
+        shuffle(order)
+        for i in range(N-1):
+            a = order[i]
+            b = order[i+1]
+            x[a, b, k] = x[b, a, k] = 1
+            
+    return x      
+
+# Helper functions to make code readable
+isolated_station = lambda x: not all(x.sum(axis=2).sum(axis=0))
+rail_covers_every_station = lambda grid: not any(grid.sum(axis=0) == 0)
+has_loop = lambda grid: not any(grid.sum(axis=0) == 1) and grid.sum() > 2
+just_two_stations = lambda grid: (grid.sum() == 2)
+get_stations_not_on_line = lambda grid: (grid.sum(axis=0) == 0).nonzero()[0]
+get_middle_stations = lambda grid: (grid.sum(axis=0) == 2).nonzero()[0]
+get_end_stations    = lambda grid: (grid.sum(axis=0) == 1).nonzero()[0]
+get_line_stations   = lambda grid: (grid.sum(axis=0) != 0).nonzero()[0]
+has_subtours = lambda grid: len(get_end_stations(grid)) > 2
+empty = lambda grid: grid.sum() == 0
+
+def get_neighbour(x, case=0):
+    x = deepcopy(x)
+    # How many lines to modify
+    m = 1 + randint(x.shape[2])
+    
+    lines = list(range(x.shape[2]))
+    shuffle(lines)
+    
+    lines_to_modify = lines[:m]
+    
+    for k in lines_to_modify:
+        grid = x[:, :, k]
+    
+        pre_grid = deepcopy(grid)
+    
+        case = choice([1, 2, 3, 4]) if case == 0 else case
+        
+        if case == 1:
+            # Case 1. Expand Rail line end (Includes forming loop)
+            if not has_loop(grid):
+                old_choices = list(get_end_stations(grid))
+                new_choices = list(get_stations_not_on_line(grid)) + old_choices
+                
+                old = choice(old_choices)
+                new = choice(new_choices)
+                
+                if new != old:
+                    grid[old, new] = grid[new, old] = 1
+
+        elif case == 2:
+            # Case 2. Shrink Rail line end (Includes breaking loop)
+            # This can make city invalid (considering station kinds)
+            # But cost function makes the cost really high
+            if has_loop(grid):
+                # Pick edge to break
+                choices = np.array(grid.nonzero()).T
+                i, j = choices[choice(range(len(choices)))]
+                grid[i, j] = grid[j, i] = 0
+            else:
+                # Pick end to shrink
+                ends = get_end_stations(grid)
+                old_end = choice(ends)
+                new_end = grid[old_end, :].argmax()
+                grid[old_end, new_end] = grid[new_end, old_end] = 0
+
+                if isolated_station(x) or empty(grid):
+                    grid[old_end, new_end] = grid[new_end, old_end] = 1
+
+        elif case == 3:
+            # Case 3. Add station in middle
+            if not rail_covers_every_station(grid):
+                choices = get_stations_not_on_line(grid)
+                b = choice(choices)
+                
+                a = choice(get_line_stations(grid))
+                c = choice(grid[a].nonzero()[0])
+                
+                grid[a, b] = grid[b, a] = grid[b, c] = grid[c, b] = 1
+                grid[a, c] = grid[c, a] = 0
+
+        elif case == 4:
+            # Case 4. Remove station in middle
+            # If not just 2 stations
+            if not just_two_stations(grid):
+                choices = get_middle_stations(grid)
+                b = choice(choices)
+                a, c = grid[b, :].nonzero()[0]
+                grid[a, b] = grid[b, a] = grid[b, c] = grid[c, b] = 0
+                prev_ac = grid[a, c]
+                grid[a, c] = grid[c, a] = 1
+
+                if isolated_station(x):
+                    grid[a, b] = grid[b, a] = grid[b, c] = grid[c, b] = 1
+                    grid[a, c] = grid[c, a] = prev_ac
+        
+    return x
+
+def simulated_annealing(city, K, cost_fn, max_iter=100, cutoff_val=0.001, save=False, experiment_max_iters=[]):
+    ''' Performs simulated annealing to find (try and find) the optimal configuration 
+        K is number of lines '''
+    # Initialise Configuration
+    cur_x = initialise(len(city.stations), K)
+    cur_cost = cost_fn(city, cur_x)
+    best_x, best_cost = cur_x, cur_cost
+    
+    experiment_max_iters = set(experiment_max_iters)
+    
+    # Time
+    t = 0
+    
+    cur_xs = []
+    new_xs = []
+    
+    # Results for computational study
+    costs = []
+    t1s = []
+    
+    while True:
+        if save:
+            cur_xs.append(cur_x)
+        
+        # Update current temperature
+        T = np.exp(np.log(cutoff_val)*t / max_iter)
+        
+        if t in experiment_max_iters:
+            t1s.append(time())
+            costs.append(best_cost)
+            
+        # End of simulated annealing
+        if T < cutoff_val:
+            if experiment_max_iters:
+                return costs, t1s
+            if save:
+                return best_x, best_cost, cur_xs, new_xs
+            # Return configuration and its value
+            return best_x, best_cost
+        
+        # Make random change
+        new_x = get_neighbour(cur_x)
+        new_cost = cost_fn(city, new_x)
+        
+        if save:
+            new_xs.append(new_x)
+        
+        # Keep change if it is an improvement (or randomly sometimes)
+        if new_cost < cur_cost or np.random.uniform(0, 1) < T:
+            cur_x, cur_cost = new_x, new_cost
+            
+            if cur_cost < best_cost:
+                best_x, best_cost = cur_x, cur_cost
+            
+        t += 1
     
 #### PLOTTING ####
-def draw(s1: Station, s2: Station, ax, c: str, disp=0) -> None:
+def draw(s1: Station, s2: Station, ax, c: str, jitter=0) -> None:
     """Draws the (s1,s2)-rail connection, with `disp` offset for overlapping rails"""
     midx, midy = midpoint(s1, s2)
     
     # Straight
-    jitter = np.random.uniform(-0.005, 0.005, 4)
+    jitter *= np.random.uniform(-0.005, 0.005, 4)
     ax.plot([s1.x+jitter[0], midx], 
             [s1.y+jitter[1], midy], lw=4, zorder=-1, c=c)
     
@@ -177,7 +341,7 @@ def graph(stations, rails, equal_aspect=False, show_station_ids=True, jitter=Tru
     plt.show()
 
 # Sorry Callum!
-def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True):    
+def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True, filename=''):    
     fig, ax = plt.subplots(figsize=(12, 12))
     
     edges = dict()
@@ -204,4 +368,8 @@ def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True)
     ax.set_xlim(min(s.x for s in stations)-0.1, max(s.x for s in stations) + 0.1)
     ax.set_ylim(min(s.y for s in stations)-0.1, max(s.y for s in stations) + 0.1)
 
-    plt.show()
+    if filename:
+        plt.savefig('images/' + filename + '.png', facecolor='white', transparent=False, dpi=fig.dpi)
+        plt.close()
+    else:
+        plt.show()

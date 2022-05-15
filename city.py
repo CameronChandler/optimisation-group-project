@@ -49,7 +49,18 @@ class City:
         return np.linalg.norm(a - b)
         
     def _gen_kinds(self) -> list[str]:
-        return list(np.random.choice(list(KINDS.keys()), self.n_stations))
+        taken_special = []
+        kinds = []
+        
+        for _ in range(self.n_stations):
+            options = [(kind, val[2]) for kind, val in KINDS.items() if kind not in taken_special]
+            remaining_kinds = [e[0] for e in options]
+            probs = np.array([e[1] for e in options])
+            kind = np.random.choice(remaining_kinds, p=probs / probs.sum())
+            if kind in ['star', 'plus', 'pentagon', 'diamond']:
+                taken_special.append(kind)
+        
+        return kinds
                                 
     def get_station(self, id_: int) -> Station:
         ''' Return station with given `id_` '''
