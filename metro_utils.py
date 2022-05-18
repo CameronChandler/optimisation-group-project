@@ -108,30 +108,46 @@ def extract_stations(var_name, city: City):
     # Else 2 stations and rail
     return [city.get_station(s_id) for s_id in indexes[:2]] + [indexes[2]]
             
-def pairs2rails(pairs):
+def base_pairs2rails(pairs, debug=False):
     ''' [(1, 2), (2, 3)] -> [1, 2, 3]'''
 
     # Step 1. Check if there is an endpoint
     starts = [pair[0] for pair in pairs]
     ends   = [pair[1] for pair in pairs]
-
+    
     for end in ends:
         if end not in starts:
             station = end
             break
     else:
-        # We have a cycle so starting point is arbitrary
         station = starts[0]
-
-    # Step 2. Work through list building up
-    pairs = dict(pairs)
-    rails = [station]
-
-    while pairs:
-        station = pairs.pop(station)
-        rails.append(station)
         
-    return rails
+    if debug: print(station)
+    
+    # Step 2. Build the rails
+    dict_pairs = dict(pairs)
+    rev_pairs = {v:k for (k,v) in dict_pairs.items()}
+    
+    # rails is a list that encodes the edge sequence
+    rails = [station]
+    while rev_pairs:
+        if debug: print(rev_pairs)
+        station = rev_pairs.pop(station)
+        rails.append(station)
+    
+    return rails[::-1]
+
+def pairs2rails(pairs, n_iter=20, debug=False):
+    """Cheeky workaround; iterates pairs2rails `n_iter` times in case of picking wrong start"""
+    from random import shuffle
+    for _ in range(n_iter):
+        try:
+            shuffle(pairs)
+            return base_pairs2rails(pairs, debug)
+        except KeyError:
+            continue
+    else:
+        raise KeyError()
 
 #### SIMULATED ANNEALING #### 
 def initialise(N, K):
@@ -373,3 +389,29 @@ def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True,
         plt.close()
     else:
         plt.show()
+    
+    return
+
+
+#### DEPRECATED ####
+def demand_by_centrality(stations, C=3):
+    """Simple proxy demand for testing the framework
+    # d = Cexp(-norm_2(rescaled(s - map_midpoint)))
+    # Rescaled(s) = s' is s.t. norm_1(s') <= 1
+    # And map_midpoint = midpoint/center of the minimal bounding box for the stations
+    #
+    # ASSUMES:
+    # That more central stations (by how MM generates its worlds) get/need more traffic
+    """
+    import math
+    lb = min([s.x for s in stations])
+    rb = max([s.x for s in stations])
+    db = min([s.y for s in stations])
+    ub = max([s.y for s in stations])
+
+    cx = (lb+rb)/2
+    cy = (db+ub)/2
+    d = np.zeros([len(stations)])
+    for i, s in enumerate(stations):
+        d[i] = C*math.exp(-math.sqrt(((s.x-cx)/(rb-lb))**2 + ((s.y-cy)/(ub-lb))**2))
+    return d
