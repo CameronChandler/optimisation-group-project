@@ -74,21 +74,6 @@ def total_distance(rails):
             
     return dist
 
-def brute_force_tsp(stations):
-    max_dist = 1e12
-    best = None
-
-    for perm in permutations(stations):
-        perm = list(perm)
-        perm.append(perm[0])
-
-        dist = total_distance(perm)
-        if dist < max_dist:
-            max_dist = dist
-            best = perm
-            
-    return best
-
 def subsets(iterable):
     ''' Return all subsets of iterable between length 2 and (len+1)/2
     powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3) '''
@@ -254,43 +239,30 @@ def get_neighbour(x, case=0):
         
     return x
 
-def simulated_annealing(city, K, cost_fn, max_iter=100, cutoff_val=0.001, save=False, experiment_max_iters=[]):
+def simulated_annealing(city, K, cost_fn, max_iter=100, cutoff_val=0.001, save=False, cur_x=None):
     ''' Performs simulated annealing to find (try and find) the optimal configuration 
         K is number of lines '''
     # Initialise Configuration
-    cur_x = initialise(len(city.stations), K)
+    if cur_x is None:
+        cur_x = initialise(len(city.stations), K)
     cur_cost = cost_fn(city, cur_x)
     best_x, best_cost = cur_x, cur_cost
-    
-    experiment_max_iters = set(experiment_max_iters)
     
     # Time
     t = 0
     
     cur_xs = []
-    new_xs = []
-    
-    # Results for computational study
-    costs = []
-    t1s = []
     
     while True:
-        if save:
-            cur_xs.append(cur_x)
+        
         
         # Update current temperature
         T = np.exp(np.log(cutoff_val)*t / max_iter)
-        
-        if t in experiment_max_iters:
-            t1s.append(time())
-            costs.append(best_cost)
             
         # End of simulated annealing
         if T < cutoff_val:
-            if experiment_max_iters:
-                return costs, t1s
             if save:
-                return best_x, best_cost, cur_xs, new_xs
+                return best_x, best_cost, cur_xs
             # Return configuration and its value
             return best_x, best_cost
         
@@ -298,12 +270,12 @@ def simulated_annealing(city, K, cost_fn, max_iter=100, cutoff_val=0.001, save=F
         new_x = get_neighbour(cur_x)
         new_cost = cost_fn(city, new_x)
         
-        if save:
-            new_xs.append(new_x)
-        
         # Keep change if it is an improvement (or randomly sometimes)
         if new_cost < cur_cost or np.random.uniform(0, 1) < T:
             cur_x, cur_cost = new_x, new_cost
+            
+            if save:
+                cur_xs.append(cur_x)
             
             if cur_cost < best_cost:
                 best_x, best_cost = cur_x, cur_cost
@@ -325,7 +297,7 @@ def draw(s1: Station, s2: Station, ax, c: str, jitter=0) -> None:
             [midy, s2.y+jitter[3]], lw=4, zorder=-1, c=c)
 
 
-def graph(stations, rails, equal_aspect=False, show_station_ids=True, jitter=True):
+def graph(stations, rails, equal_aspect=False, show_station_ids=True, jitter=True, filename=''):
     # Check if only one rail
     if isinstance(rails[0], Station):
         rails = [rails]
@@ -354,9 +326,12 @@ def graph(stations, rails, equal_aspect=False, show_station_ids=True, jitter=Tru
     ax.set_xlim(min(s.x for s in stations)-0.1, max(s.x for s in stations) + 0.1)
     ax.set_ylim(min(s.y for s in stations)-0.1, max(s.y for s in stations) + 0.1)
 
-    plt.show()
+    if filename:
+        plt.savefig('images/' + filename + '.png', facecolor='white', transparent=False, dpi=fig.dpi)
+        plt.close()
+    else:
+        plt.show()
 
-# Sorry Callum!
 def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True, filename=''):    
     fig, ax = plt.subplots(figsize=(12, 12))
     
@@ -389,8 +364,6 @@ def graph_x(stations, x, equal_aspect=False, show_station_ids=True, jitter=True,
         plt.close()
     else:
         plt.show()
-    
-    return
 
 
 #### DEPRECATED ####
